@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Sector rotation analysis from TraderMonty's public CSV data.
 
+.. note:: Uses ``from __future__ import annotations`` for Python 3.9 compat.
+
 Fetches sector_summary.csv (and uptrend_ratio_timeseries.csv for freshness
 check) from GitHub, then produces sector rankings, risk-regime scoring,
 overbought/oversold flags, and market-cycle phase estimation.
@@ -10,6 +12,8 @@ Data Source:
 
 Dependencies: stdlib only (urllib, csv, json, argparse, dataclasses).
 """
+
+from __future__ import annotations
 
 import argparse
 import csv

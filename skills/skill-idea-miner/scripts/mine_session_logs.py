@@ -441,7 +441,7 @@ def abstract_with_llm(
     env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
 
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B607 – claude CLI is an expected dependency
             [
                 "claude",
                 "-p",
