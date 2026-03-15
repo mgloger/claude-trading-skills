@@ -178,12 +178,68 @@ is dangerous right now — not just that it should be avoided, but what specific
 
 ---
 
-## QUICK VERSION (15 minutes)
+## QUICK VERSION — US + EUROPEAN MARKETS COMBINED (25 minutes)
 
-If you want a faster scan without the full deep-dive, use this condensed version:
+Runs both markets in a single session. US and European screeners run back-to-back;
+the final report covers both markets with a unified shortlist. No FMP API key required
+for the European half — all EU skills fall back to yfinance automatically.
 
 ```
-Run a quick investment opportunity scan:
+Run a combined US + European investment opportunity scan.
+
+--- US MARKET ---
+
+1. /market-breadth-analyzer — is the US market healthy enough to buy?
+2. /market-top-detector — any US warning signs?
+3. /theme-detector — what themes are leading globally?
+4. /vcp-screener --mode prebreakout — US stocks near a buyable pivot?
+5. /canslim-screener — US stocks with the best earnings + price momentum?
+
+--- EUROPEAN MARKET ---
+
+6. /market-top-detector --europe — Euro Stoxx 50 + DAX top risk score.
+7. /ftd-detector --europe — confirmed uptrend, rally attempt, or correction?
+8. /vcp-screener --europe --mode prebreakout — European VCP setups near pivot.
+9. /canslim-screener --europe — European stocks with strongest CANSLIM scores.
+
+--- SYNTHESIS ---
+
+Build a single combined candidate table across both markets:
+- List stocks from BOTH vcp-screener runs and BOTH canslim-screener runs
+- Mark each stock's market (US / EU) and which screeners it appeared in
+- Multi-screen score: +1 per screener hit, +1 if sector matches a leading theme,
+  +1 if both US and EU market environments are risk-on (reward global setups)
+- Sort descending. Show top 5 US and top 5 EU candidates with entry, stop, target.
+- Use /position-sizer for sizing on the top 1 US pick and top 1 EU pick.
+
+--- FINAL REPORT ---
+
+Write a plain-English summary in full paragraphs (no bullet points) covering:
+
+1. Market environment — US vs. Europe: Compare the two markets side by side.
+   Which is healthier right now? Are they in sync or diverging? Use the actual scores
+   (breadth, distribution days, FTD state, top-detector score) to support the comparison.
+   Explain what the divergence or alignment means for someone allocating across both.
+
+2. What to do with your portfolio this week: Give specific, concrete guidance for both
+   markets. Should you be deploying capital, holding, or raising cash — and does the
+   answer differ between US and EU? Explain the reasoning behind each recommendation.
+
+3. Top picks and why: Explain why the top 1-2 US and top 1-2 EU candidates stand out.
+   What makes their fundamentals and technicals compelling? What are you waiting for
+   before entering, and what happens to the thesis if the market continues to weaken?
+
+4. Key triggers to watch: What signals — Follow-Through Day, price levels, macro events,
+   earnings — would either confirm a buy or force you to step back? Be specific about
+   what to look for in each market.
+```
+
+---
+
+## QUICK VERSION — US MARKET ONLY (15 minutes)
+
+```
+Run a quick investment opportunity scan (US market):
 
 1. /market-breadth-analyzer — is the market healthy enough to buy?
 2. /market-top-detector — any warning signs?
@@ -206,10 +262,88 @@ Write in full paragraphs. No bullet points in this section.
 
 ---
 
+## QUICK VERSION — EUROPEAN MARKET ONLY (15 minutes)
+
+Same structure as the US quick scan, using the `--europe` flag where supported.
+Tracks Euro Stoxx 50 + DAX instead of S&P 500 + Nasdaq. Uses the European stock universe
+(`universes/europe.txt`). No FMP API key required — all skills fall back to yfinance.
+
+```
+Run a quick investment opportunity scan (European market):
+
+1. /market-top-detector --europe
+   → Composite top risk score using Euro Stoxx 50 + DAX. Note distribution day count,
+     defensive rotation, and index technical condition.
+
+2. /ftd-detector --europe
+   → Are Euro Stoxx 50 and DAX in confirmed uptrend, rally attempt, or correction?
+     Note: follow-through day status for both indices.
+
+3. /theme-detector
+   → What themes are currently leading? (theme-detector covers global themes —
+     note which hot themes have strong European exposure, e.g. Defence, Financials, Energy.)
+
+4. /vcp-screener --europe --mode prebreakout
+   → Screen European stocks from universes/europe.txt for VCP setups near buyable pivots.
+     Note: top 10 by composite score and their distance from pivot.
+
+5. /canslim-screener --europe
+   → Screen European stocks for CANSLIM growth characteristics.
+     Note: top 10 by score, focusing on A/B earnings grades and strong relative strength.
+
+Cross-reference: list stocks that appear in BOTH vcp-screener and canslim-screener results.
+Rank by composite VCP score. Show top 5 with entry, stop, and target levels.
+Use /position-sizer for sizing on the top 2 picks.
+
+Then write a plain-English summary covering:
+1. What the European market environment means right now (healthy/topping/recovering?) and why,
+   using the market-top score, distribution day count, and FTD state as evidence.
+2. What to do with European holdings this week — specific actions, not vague guidance. Explain the reasoning.
+3. Why the top 1-2 picks stand out, what you are waiting for before buying, and what risk you
+   are taking if you act early.
+4. What specific signal (e.g. Follow-Through Day on Euro Stoxx 50 or DAX, price level, macro event)
+   would change your stance.
+
+Write in full paragraphs. No bullet points in this section.
+```
+
+---
+
+## FULL VERSION — EUROPEAN MARKET LAYERS
+
+For a more thorough European scan, replace the US-specific steps in the main workflow as follows.
+Steps without an EU equivalent (macro-regime-detector, market-breadth-analyzer, earnings-calendar)
+can still be run for global context; their data is not Europe-specific but remains informative.
+
+**Layer 1 — Replace with European equivalents:**
+- `/market-top-detector --europe` instead of `/market-top-detector`
+- `/ftd-detector --europe` instead of `/ftd-detector`
+- Run `/market-breadth-analyzer` and `/uptrend-analyzer` as-is for global breadth context
+  (these use US data; treat as a proxy for risk appetite rather than EU-specific health)
+
+**Layer 3 — Sector & Theme:**
+- Run `/theme-detector` as-is — note themes with strong European representation
+  (Defence, European Banks, European Energy, Luxury Goods)
+- Run `/sector-analyst` for global sector rotation context
+
+**Layer 4 — Screening:**
+- `/vcp-screener --europe --mode prebreakout`
+- `/canslim-screener --europe`
+- Skip `/earnings-trade-analyzer` and `/institutional-flow-tracker` (US-data only)
+
+**Layer 5 — Deep Dive:**
+- Use `/us-stock-analysis` for European ADRs if available (e.g. ASML, SAP, NVO)
+- For LSE/Xetra/Euronext stocks, provide a chart image to `/technical-analyst` directly
+
+---
+
 ## NOTES
 
 - **API keys required** for steps 7 (economic-calendar), 8 (earnings-calendar), 11-14 (screeners): set `FMP_API_KEY`
+- **No API key needed for European quick scan** — all four EU skills fall back to yfinance automatically
 - **Chart images required** for step 16 (technical-analyst): screenshot from TradingView or similar
 - **Full run time**: ~45-60 minutes end to end
-- **Quick version run time**: ~10-15 minutes
+- **Quick version run time**: ~10-15 minutes (US or EU)
+- **European universe**: defined in `universes/europe.txt` (Yahoo Finance suffixes: .L, .DE, .PA, .AS, .MI, etc.)
+- **Skills supporting `--europe` flag**: `vcp-screener`, `canslim-screener`, `market-top-detector`, `ftd-detector`
 - Save all reports to `reports/` — the screeners do this automatically
