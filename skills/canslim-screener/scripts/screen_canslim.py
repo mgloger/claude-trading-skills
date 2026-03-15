@@ -31,6 +31,7 @@ from calculators.market_calculator import calculate_market_direction
 from calculators.new_highs_calculator import calculate_newness
 from calculators.supply_demand_calculator import calculate_supply_demand
 from fmp_client import FMPClient
+from yfinance_client import YFinanceClient
 from report_generator import generate_json_report, generate_markdown_report
 from scorer import (
     calculate_composite_score_phase3,
@@ -275,13 +276,18 @@ def main():
     print("=" * 60)
     print()
 
-    # Initialize FMP client
-    try:
-        client = FMPClient(api_key=args.api_key)
-        print("✓ FMP API client initialized")
-    except ValueError as e:
-        print(f"ERROR: {e}", file=sys.stderr)
-        sys.exit(1)
+    # Initialize data client: prefer FMP when a key is available, else yfinance
+    use_fmp = args.api_key or os.getenv("FMP_API_KEY")
+    if use_fmp:
+        try:
+            client = FMPClient(api_key=args.api_key)
+            print("✓ FMP API client initialized")
+        except ValueError as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        client = YFinanceClient()
+        print("✓ yfinance client initialized (no FMP key — using Yahoo Finance)")
 
     # Determine universe
     if args.universe:
