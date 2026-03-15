@@ -1,0 +1,190 @@
+# Investment Opportunity Scanner — Master Prompt
+
+Paste this prompt into a Claude Code session to run a full top-down investment research workflow.
+All steps use skills from this repository. Run them in the order shown — each layer informs the next.
+
+---
+
+## THE PROMPT
+
+```
+I want to find the best current investment opportunities using a structured, data-driven process.
+Work through the following layers in order. At each layer, record key findings before moving on.
+At the end, produce a ranked shortlist of 5-10 actionable ideas with conviction scores.
+
+---
+
+### LAYER 1 — MARKET REGIME: Should I be investing aggressively or defensively?
+
+Run these skills and answer: (a) What is the current macro regime? (b) Is the market healthy or topping?
+(c) Are we recovering from a bottom or extended from a prior run?
+
+1. /macro-regime-detector
+   → Identify the structural regime (Concentration / Broadening / Contraction / Inflection).
+     Note: which asset classes and factors are leading?
+
+2. /market-top-detector
+   → Composite score 0-100. Note: distribution day count, leading stock deterioration,
+     defensive rotation score. Is risk HIGH / MEDIUM / LOW?
+
+3. /market-breadth-analyzer
+   → Composite breadth score 0-100. Note: advance-decline health, % stocks above key MAs.
+
+4. /uptrend-analyzer
+   → Uptrend ratio score 0-100. Note: sector participation and momentum readings.
+
+5. /ftd-detector
+   → Are we in a confirmed uptrend, rally attempt, or downtrend?
+     Note: follow-through day status for S&P 500 and Nasdaq.
+
+LAYER 1 DECISION:
+- If market-top score > 70 AND breadth < 40: reduce position sizes by 50%, focus on defensive sectors only.
+- If ftd-detector shows no confirmed uptrend: wait for confirmation before new entries.
+- If all three (breadth, uptrend, FTD) are positive: full risk-on, proceed aggressively.
+Record: RISK MODE = [FULL / REDUCED / DEFENSIVE]
+
+---
+
+### LAYER 2 — MACRO & NEWS CONTEXT: What forces are driving markets this week?
+
+6. /market-news-analyst
+   → Identify the 3-5 most market-moving events from the past 10 days.
+     Note: which sectors/assets were most impacted and in which direction.
+
+7. /economic-calendar-fetcher
+   → List all HIGH-impact events in the next 14 days (Fed decisions, CPI, jobs, GDP).
+     Flag any events that could disrupt current setups.
+
+8. /earnings-calendar
+   → List major earnings reports due in the next 10 days.
+     Highlight any names that appear in later screening steps — avoid holding through earnings
+     unless that is intentional.
+
+---
+
+### LAYER 3 — SECTOR & THEME ROTATION: Where is money flowing?
+
+9. /theme-detector
+   → Identify the top 3 HOT themes (high conviction, early-to-mid lifecycle preferred).
+     Note the top 5 stocks associated with each theme.
+
+10. /sector-analyst
+    → Which sectors are in confirmed uptrends vs. weakening?
+      Rank sectors: LEADING / IMPROVING / LAGGING / BREAKING DOWN.
+
+LAYER 3 DECISION:
+Focus the screening in Layer 4 on stocks in LEADING or IMPROVING sectors that overlap
+with HOT themes. Deprioritize stocks in LAGGING or BREAKING DOWN sectors.
+Record: FOCUS SECTORS = [...], FOCUS THEMES = [...]
+
+---
+
+### LAYER 4 — STOCK SCREENING: Who are the specific candidates?
+
+Run all four screeners. Collect results into a combined candidate pool.
+
+11. /vcp-screener
+    → Run with --mode prebreakout to find stocks near a buyable pivot.
+      Note: top 10 by composite score, their sectors, and distance from pivot.
+
+12. /canslim-screener
+    → Note: top 10 by score. Focus on stocks with A/B earnings grades and strong RS.
+
+13. /earnings-trade-analyzer
+    → Note: top 10 post-earnings momentum stocks (grade A or B only).
+      These are candidates for PEAD follow-through.
+
+14. /institutional-flow-tracker
+    → Which stocks show the strongest smart-money accumulation in recent 13F filings?
+      Note: top 10 by net institutional buying change.
+
+LAYER 4 SYNTHESIS:
+Build a master candidate table. Give each stock a MULTI-SCREEN SCORE:
+- +1 point for each screener it appears in (max 4)
+- +1 point if its sector is in your FOCUS SECTORS list
+- +1 point if it belongs to a FOCUS THEME
+- -1 point if it has an earnings report within 7 days (unless playing earnings)
+
+Sort descending. Keep the top 15 stocks for deep-dive in Layer 5.
+
+---
+
+### LAYER 5 — DEEP DIVE: Are these actually good setups?
+
+For each of your top 5-7 candidates from Layer 4:
+
+15. /us-stock-analysis [TICKER]
+    → Check: EPS growth trend, revenue growth, profit margins, valuation vs. peers.
+      Red flags: declining margins, heavy debt, recent earnings miss.
+
+16. /technical-analyst [provide chart image if available]
+    → Confirm: stage 2 uptrend, base pattern quality, volume characteristics.
+      Identify: exact pivot/entry price, stop-loss level, first price target.
+
+LAYER 5 OUTPUT per stock:
+- Fundamental grade: A / B / C / D
+- Technical setup: READY / FORMING / EXTENDED / BROKEN
+- Entry price, stop-loss price, target price
+- Risk/reward ratio
+
+---
+
+### LAYER 6 — SYNTHESIS & SIZING: How much to buy?
+
+17. /stanley-druckenmiller-investment
+    → Feed in findings from Layers 1-5. Get a unified conviction score (0-100)
+      and allocation recommendation. Note the pattern classification.
+
+18. /position-sizer [for each final candidate]
+    → Inputs: account size, entry price, stop-loss price, risk per trade (1-2% of account).
+      Output: exact share count and dollar amount per position.
+
+---
+
+### FINAL OUTPUT
+
+Produce a ranked investment shortlist in this format:
+
+| Rank | Ticker | Theme/Sector | Multi-Screen Score | Conviction (0-100) | Entry | Stop | Target | R:R | Shares | $ Risk |
+|------|--------|-------------|-------------------|-------------------|-------|------|--------|-----|--------|--------|
+| 1    | ...    | ...         | ...               | ...               | ...   | ...  | ...    | ... | ...    | ...    |
+
+Then write a 3-5 sentence Market Narrative summarising:
+- Current regime and risk mode
+- The dominant theme driving your top picks
+- Key risk events to watch (from economic calendar)
+- One sentence on why you have conviction in the #1 pick
+
+Flag any positions that should be AVOIDED or SIZED SMALL due to upcoming earnings,
+sector weakness, or market-top risk.
+```
+
+---
+
+## QUICK VERSION (15 minutes)
+
+If you want a faster scan without the full deep-dive, use this condensed version:
+
+```
+Run a quick investment opportunity scan:
+
+1. /market-breadth-analyzer — is the market healthy enough to buy?
+2. /market-top-detector — any warning signs?
+3. /theme-detector — what themes are leading?
+4. /vcp-screener --mode prebreakout — who is near a buyable pivot?
+5. /canslim-screener — who has the best earnings + price momentum?
+
+Cross-reference: list stocks that appear in BOTH vcp-screener and canslim-screener results
+AND belong to a leading theme. Rank by composite VCP score. Show top 5 with entry,
+stop, and target levels. Use /position-sizer for sizing on the top 2 picks.
+```
+
+---
+
+## NOTES
+
+- **API keys required** for steps 7 (economic-calendar), 8 (earnings-calendar), 11-14 (screeners): set `FMP_API_KEY`
+- **Chart images required** for step 16 (technical-analyst): screenshot from TradingView or similar
+- **Full run time**: ~45-60 minutes end to end
+- **Quick version run time**: ~10-15 minutes
+- Save all reports to `reports/` — the screeners do this automatically
