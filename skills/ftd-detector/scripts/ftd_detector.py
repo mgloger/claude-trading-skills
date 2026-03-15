@@ -143,12 +143,12 @@ def main():
     nasdaq_state = market_state["nasdaq"]["state"]
     combined = market_state["combined_state"]
 
-    print(f"  S&P 500 State: {sp500_state}")
-    print(f"  NASDAQ State:  {nasdaq_state}")
+    print(f"  {primary_label} State: {sp500_state}")
+    print(f"  {secondary_label} State:  {nasdaq_state}")
     print(f"  Combined:      {combined}")
 
     # Print swing low info if found
-    for label, idx_data in [("S&P 500", market_state["sp500"]), ("NASDAQ", market_state["nasdaq"])]:
+    for label, idx_data in [(primary_label, market_state["sp500"]), (secondary_label, market_state["nasdaq"])]:
         swing = idx_data.get("swing_low")
         if swing:
             print(
