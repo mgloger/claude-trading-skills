@@ -134,10 +134,44 @@ def parse_arguments():
         help="Use static default ETF basket instead of dynamic selection",
     )
 
+    # European mode
+    parser.add_argument(
+        "--europe",
+        action="store_true",
+        help=(
+            "Analyse European market instead of US. "
+            "Uses Euro Stoxx 50 (^STOXX50E), DAX (^GDAXI), VSTOXX (^V2TX) "
+            "and European sector ETFs. Disables TraderMonty auto-breadth (US-only)."
+        ),
+    )
+
     # Output
     parser.add_argument("--output-dir", default=".", help="Output directory for reports")
 
     return parser.parse_args()
+
+
+# ── European ETF baskets ────────────────────────────────────────────────────
+# Leading/risk-on European ETFs (proxies for growth leadership)
+EUROPEAN_CANDIDATE_POOL = [
+    "EXV1.DE",  # iShares STOXX Europe 600 Oil & Gas
+    "EXH1.DE",  # iShares STOXX Europe 600 Banks
+    "EXH6.DE",  # iShares STOXX Europe 600 Industrials
+    "EXH9.DE",  # iShares STOXX Europe 600 Technology
+    "EXH7.DE",  # iShares STOXX Europe 600 Basic Resources
+    "EZU",      # iShares MSCI Eurozone ETF (broad)
+    "EWG",      # iShares MSCI Germany
+    "EWU",      # iShares MSCI United Kingdom
+    "EWQ",      # iShares MSCI France
+    "EUFN",     # iShares MSCI Europe Financials
+    "EXH8.DE",  # iShares STOXX Europe 600 Healthcare
+    "EXV6.DE",  # iShares STOXX Europe 600 Utilities
+]
+EUROPEAN_LEADING_ETFS = ["EZU", "EWG", "EWU", "EWQ", "EUFN", "EXH9.DE", "EXH7.DE"]
+
+# Defensive vs offensive European sector ETFs
+EUROPEAN_DEFENSIVE_ETFS = ["EXH8.DE", "EXV6.DE", "EXH3.DE"]   # Healthcare, Utilities, Cons.Staples
+EUROPEAN_OFFENSIVE_ETFS = ["EXH1.DE", "EXV1.DE", "EXH6.DE", "EXH9.DE"]  # Banks, Oil&Gas, Indust., Tech
 
 
 def compute_data_freshness(date_args: dict) -> dict:
@@ -269,9 +303,38 @@ def main():
 
     print("=" * 70)
     print("Market Top Detector")
-    print("O'Neil (Distribution) + Minervini (Leadership) + Monty (Rotation)")
+    mode_label = "European Market" if args.europe else "US Market"
+    print(f"O'Neil (Distribution) + Minervini (Leadership) + Monty (Rotation) [{mode_label}]")
     print("=" * 70)
     print()
+
+    # ── Mode-specific configuration ──────────────────────────────────────────
+    if args.europe:
+        primary_symbol   = "^STOXX50E"
+        secondary_symbol = "^GDAXI"
+        vix_symbol       = "^V2TX"
+        primary_label    = "Euro Stoxx 50"
+        secondary_label  = "DAX"
+        vix_label        = "VSTOXX"
+        candidate_pool   = EUROPEAN_CANDIDATE_POOL
+        leading_etfs     = EUROPEAN_LEADING_ETFS
+        defensive_etfs   = EUROPEAN_DEFENSIVE_ETFS
+        offensive_etfs   = EUROPEAN_OFFENSIVE_ETFS
+        # TraderMonty breadth CSV is US-only; disable auto-fetch
+        if not args.no_auto_breadth:
+            args.no_auto_breadth = True
+            print("  [INFO] --europe: TraderMonty breadth CSV is US-only — auto-breadth disabled.")
+    else:
+        primary_symbol   = "^GSPC"
+        secondary_symbol = "QQQ"
+        vix_symbol       = "^VIX"
+        primary_label    = "S&P 500"
+        secondary_label  = "NASDAQ (QQQ)"
+        vix_label        = "VIX"
+        candidate_pool   = CANDIDATE_POOL
+        leading_etfs     = LEADING_ETFS
+        defensive_etfs   = DEFENSIVE_ETFS
+        offensive_etfs   = OFFENSIVE_ETFS
 
     # Initialize data client: prefer FMP when a key is available, else yfinance
     use_fmp = args.api_key or os.getenv("FMP_API_KEY")
@@ -293,39 +356,39 @@ def main():
     print("Step 1: Fetching Market Data")
     print("-" * 70)
 
-    # S&P 500 data
-    print("  Fetching S&P 500 data...", end=" ", flush=True)
-    sp500_quote_list = client.get_quote("^GSPC")
+    # Primary index data
+    print(f"  Fetching {primary_label} data...", end=" ", flush=True)
+    sp500_quote_list = client.get_quote(primary_symbol)
     sp500_quote = sp500_quote_list[0] if sp500_quote_list else None
-    sp500_history_data = client.get_historical_prices("^GSPC", days=260)
+    sp500_history_data = client.get_historical_prices(primary_symbol, days=260)
     sp500_history = sp500_history_data.get("historical", []) if sp500_history_data else []
     if sp500_quote and sp500_history:
         print(f"OK (${sp500_quote.get('price', 0):.2f}, {len(sp500_history)} days)")
     else:
         print("FAILED")
-        print("ERROR: Cannot proceed without S&P 500 data", file=sys.stderr)
+        print(f"ERROR: Cannot proceed without {primary_label} data", file=sys.stderr)
         sys.exit(1)
 
-    # NASDAQ/QQQ data
-    print("  Fetching NASDAQ (QQQ) data...", end=" ", flush=True)
-    qqq_quote_list = client.get_quote("QQQ")
+    # Secondary index data
+    print(f"  Fetching {secondary_label} data...", end=" ", flush=True)
+    qqq_quote_list = client.get_quote(secondary_symbol)
     qqq_quote = qqq_quote_list[0] if qqq_quote_list else None
-    qqq_history_data = client.get_historical_prices("QQQ", days=260)
+    qqq_history_data = client.get_historical_prices(secondary_symbol, days=260)
     qqq_history = qqq_history_data.get("historical", []) if qqq_history_data else []
     if qqq_quote and qqq_history:
         print(f"OK (${qqq_quote.get('price', 0):.2f}, {len(qqq_history)} days)")
     else:
-        print("WARN - NASDAQ data unavailable, using S&P 500 only")
+        print(f"WARN - {secondary_label} data unavailable, using {primary_label} only")
 
-    # VIX
-    print("  Fetching VIX...", end=" ", flush=True)
-    vix_quote_list = client.get_quote("^VIX")
+    # Volatility index
+    print(f"  Fetching {vix_label}...", end=" ", flush=True)
+    vix_quote_list = client.get_quote(vix_symbol)
     vix_quote = vix_quote_list[0] if vix_quote_list else None
     vix_level = vix_quote.get("price", None) if vix_quote else None
     if vix_level:
         print(f"OK ({vix_level:.2f})")
     else:
-        print("WARN - VIX unavailable")
+        print(f"WARN - {vix_label} unavailable")
 
     # VIX Term Structure auto-detection
     effective_vix_term = args.vix_term  # CLI override takes priority
@@ -340,14 +403,16 @@ def main():
             print("WARN - VIX3M unavailable, manual --vix-term needed")
 
     # Leading ETFs (dynamic or static basket)
-    if args.static_basket:
-        selected_basket = list(LEADING_ETFS)
-        print("  Fetching Leading ETFs (static basket)...", end=" ", flush=True)
+    if args.static_basket or args.europe:
+        # European mode always uses static basket (no dynamic selection logic)
+        selected_basket = list(leading_etfs)
+        basket_mode = "static (European)" if args.europe else "static"
+        print(f"  Fetching Leading ETFs ({basket_mode})...", end=" ", flush=True)
         leading_quotes = client.get_batch_quotes(selected_basket)
         leading_historical = client.get_batch_historical(selected_basket, days=60)
     else:
         print("  Fetching candidate pool quotes for dynamic basket...", end=" ", flush=True)
-        candidate_quotes = client.get_batch_quotes(CANDIDATE_POOL)
+        candidate_quotes = client.get_batch_quotes(candidate_pool)
         print(f"OK ({len(candidate_quotes)} candidates)")
         selected_basket = select_dynamic_basket(candidate_quotes)
         print(f"  Selected dynamic basket: {selected_basket}")
@@ -357,14 +422,14 @@ def main():
     print(f"OK ({len(leading_quotes)} quotes, {len(leading_historical)} histories)")
 
     # Sector ETFs
-    all_sector_etfs = list(set(DEFENSIVE_ETFS + OFFENSIVE_ETFS))
-    # Remove QQQ from sector fetching if already fetched
-    sector_etfs_to_fetch = [e for e in all_sector_etfs if e != "QQQ"]
+    all_sector_etfs = list(set(defensive_etfs + offensive_etfs))
+    # Exclude the secondary index if it was already fetched
+    sector_etfs_to_fetch = [e for e in all_sector_etfs if e != secondary_symbol]
     print("  Fetching Sector ETFs...", end=" ", flush=True)
     sector_historical = client.get_batch_historical(sector_etfs_to_fetch, days=50)
-    # Add QQQ history if available
+    # Add secondary index history if available
     if qqq_history:
-        sector_historical["QQQ"] = qqq_history[:50]
+        sector_historical[secondary_symbol] = qqq_history[:50]
     print(f"OK ({len(sector_historical)} ETFs)")
 
     print()
@@ -389,7 +454,11 @@ def main():
 
     # Component 3: Defensive Rotation (15%)
     print("  [3/6] Defensive Sector Rotation...", end=" ", flush=True)
-    comp3 = calculate_defensive_rotation(sector_historical)
+    comp3 = calculate_defensive_rotation(
+        sector_historical,
+        defensive_etfs=defensive_etfs,
+        offensive_etfs=offensive_etfs,
+    )
     print(f"Score: {comp3['score']} ({comp3['signal']})")
 
     # Auto-fetch 200DMA breadth if not provided via CLI

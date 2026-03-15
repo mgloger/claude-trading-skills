@@ -2,12 +2,13 @@
 """
 CANSLIM Stock Screener - Phase 3 (Full CANSLIM)
 
-Screens US stocks using William O'Neil's CANSLIM methodology.
+Screens US or European stocks using William O'Neil's CANSLIM methodology.
 Phase 3 implements all 7 components: C, A, N, S, L, I, M (100% coverage)
 
 Usage:
     python3 screen_canslim.py --api-key YOUR_KEY --max-candidates 40
     python3 screen_canslim.py  # Uses FMP_API_KEY environment variable
+    python3 screen_canslim.py --europe  # Screen European stocks (no API key needed)
 
 Output:
     - JSON: canslim_screener_YYYY-MM-DD_HHMMSS.json
@@ -18,6 +19,7 @@ import argparse
 import os
 import sys
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 # Add calculators directory to path
@@ -119,7 +121,36 @@ def parse_arguments():
         help="Custom list of stock symbols to screen (overrides default S&P 500)",
     )
 
+    parser.add_argument(
+        "--europe",
+        action="store_true",
+        help="Screen European stocks from universes/europe.txt (no API key needed)",
+    )
+
     return parser.parse_args()
+
+
+def load_europe_universe() -> list[str]:
+    """Load European stock tickers from universes/europe.txt.
+
+    Returns a list of ticker symbols. Resolves the file relative to the
+    project root (3 levels above this script: scripts/ -> canslim-screener/
+    -> skills/ -> project root).
+    """
+    project_root = Path(__file__).resolve().parents[3]
+    europe_file = project_root / "universes" / "europe.txt"
+
+    if not europe_file.exists():
+        print(f"ERROR: {europe_file} not found", file=sys.stderr)
+        return []
+
+    tickers = []
+    with open(europe_file) as f:
+        for line in f:
+            line = line.split("#")[0].strip()
+            if line:
+                tickers.append(line)
+    return tickers
 
 
 def analyze_stock(
@@ -289,13 +320,26 @@ def main():
         client = YFinanceClient()
         print("✓ yfinance client initialized (no FMP key — using Yahoo Finance)")
 
-    # Determine universe
-    if args.universe:
+    # Determine universe and market benchmark
+    if args.europe:
+        tickers = load_europe_universe()
+        if not tickers:
+            print("ERROR: Unable to load European universe", file=sys.stderr)
+            sys.exit(1)
+        universe = tickers[: args.max_candidates]
+        print(f"✓ European universe: {len(universe)} stocks")
+        benchmark_symbol = "^STOXX50E"
+        vix_symbol = "^V2TX"
+    elif args.universe:
         universe = args.universe[: args.max_candidates]
         print(f"✓ Custom universe: {len(universe)} stocks")
+        benchmark_symbol = "^GSPC"
+        vix_symbol = "^VIX"
     else:
         universe = DEFAULT_UNIVERSE[: args.max_candidates]
         print(f"✓ Default universe (S&P 500 top {len(universe)}): {len(universe)} stocks")
+        benchmark_symbol = "^GSPC"
+        vix_symbol = "^VIX"
 
     print()
 
@@ -303,24 +347,23 @@ def main():
     print("Step 1: Analyzing Market Direction (M Component)")
     print("-" * 60)
 
-    sp500_quote = client.get_quote("^GSPC")
-    vix_quote = client.get_quote("^VIX")
+    benchmark_label = "Euro Stoxx 50" if args.europe else "S&P 500"
+    sp500_quote = client.get_quote(benchmark_symbol)
+    vix_quote = client.get_quote(vix_symbol)
 
     if not sp500_quote:
-        print("ERROR: Unable to fetch S&P 500 data", file=sys.stderr)
+        print(f"ERROR: Unable to fetch {benchmark_label} data", file=sys.stderr)
         sys.exit(1)
 
-    # Fetch S&P 500 historical prices (used by both M and L components)
-    print("Fetching S&P 500 52-week data for M (EMA) and L (Relative Strength) components...")
-    sp500_historical = client.get_historical_prices(
-        "^GSPC", days=365
-    )  # Must match ^GSPC quote for M component EMA
+    # Fetch benchmark historical prices (used by both M and L components)
+    print(f"Fetching {benchmark_label} 52-week data for M (EMA) and L (Relative Strength) components...")
+    sp500_historical = client.get_historical_prices(benchmark_symbol, days=365)
     if sp500_historical and sp500_historical.get("historical"):
         sp500_days = len(sp500_historical.get("historical", []))
-        print(f"✓ S&P 500 historical data: {sp500_days} days")
+        print(f"✓ {benchmark_label} historical data: {sp500_days} days")
     else:
         print(
-            "⚠️  S&P 500 historical data unavailable - M component will use EMA fallback, L component will use absolute performance"
+            f"⚠️  {benchmark_label} historical data unavailable - M component will use EMA fallback, L component will use absolute performance"
         )
 
     # Calculate M component using real historical prices for accurate EMA
@@ -331,7 +374,7 @@ def main():
         vix_quote=vix_quote[0] if vix_quote else None,
     )
 
-    print(f"S&P 500: ${market_data['sp500_price']:.2f}")
+    print(f"{benchmark_label}: ${market_data['sp500_price']:.2f}")
     print(f"Distance from 50-EMA: {market_data['distance_from_ema_pct']:+.2f}%")
     print(f"Trend: {market_data['trend']}")
     print(f"M Score: {market_data['score']}/100")

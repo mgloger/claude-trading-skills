@@ -23,6 +23,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(__file__))
 
 from fmp_client import FMPClient
+from yfinance_client import YFinanceClient
 from post_ftd_monitor import assess_post_ftd_health
 from rally_tracker import get_market_state
 from report_generator import generate_json_report, generate_markdown_report
@@ -40,6 +41,11 @@ def parse_arguments():
         default=".",
         help="Output directory for reports (default: current directory)",
     )
+    parser.add_argument(
+        "--europe",
+        action="store_true",
+        help="Track European indices: Euro Stoxx 50 (^STOXX50E) + DAX (^GDAXI) instead of S&P 500 + Nasdaq",
+    )
     return parser.parse_args()
 
 
@@ -48,17 +54,35 @@ def main():
 
     print("=" * 70)
     print("FTD Detector - Follow-Through Day Bottom Confirmation")
-    print("O'Neil Rally Attempt + FTD State Machine (Dual Index)")
+    mode_label = "European Indices" if args.europe else "US Indices"
+    print(f"O'Neil Rally Attempt + FTD State Machine (Dual Index) [{mode_label}]")
     print("=" * 70)
     print()
 
-    # Initialize FMP client
-    try:
-        client = FMPClient(api_key=args.api_key)
-        print("FMP API client initialized")
-    except ValueError as e:
-        print(f"ERROR: {e}", file=sys.stderr)
-        sys.exit(1)
+    # Mode-specific index configuration
+    if args.europe:
+        primary_symbol   = "^STOXX50E"
+        secondary_symbol = "^GDAXI"
+        primary_label    = "Euro Stoxx 50"
+        secondary_label  = "DAX"
+    else:
+        primary_symbol   = "^GSPC"
+        secondary_symbol = "QQQ"
+        primary_label    = "S&P 500"
+        secondary_label  = "NASDAQ (QQQ)"
+
+    # Initialize data client: prefer FMP when a key is available, else yfinance
+    use_fmp = args.api_key or os.getenv("FMP_API_KEY")
+    if use_fmp:
+        try:
+            client = FMPClient(api_key=args.api_key)
+            print("FMP API client initialized")
+        except ValueError as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        client = YFinanceClient()
+        print("yfinance client initialized (no FMP key — using Yahoo Finance)")
 
     # ========================================================================
     # Step 1: Fetch Market Data (4 API calls)
@@ -67,38 +91,38 @@ def main():
     print("Step 1: Fetching Market Data")
     print("-" * 70)
 
-    # S&P 500 history (60 trading days)
-    print("  Fetching S&P 500 history...", end=" ", flush=True)
-    sp500_history_data = client.get_historical_prices("^GSPC", days=80)
+    # Primary index history
+    print(f"  Fetching {primary_label} history...", end=" ", flush=True)
+    sp500_history_data = client.get_historical_prices(primary_symbol, days=80)
     sp500_history = sp500_history_data.get("historical", []) if sp500_history_data else []
     if sp500_history:
         print(f"OK ({len(sp500_history)} days)")
     else:
         print("FAILED")
-        print("ERROR: Cannot proceed without S&P 500 data", file=sys.stderr)
+        print(f"ERROR: Cannot proceed without {primary_label} data", file=sys.stderr)
         sys.exit(1)
 
-    # NASDAQ/QQQ history (60 trading days)
-    print("  Fetching NASDAQ (QQQ) history...", end=" ", flush=True)
-    qqq_history_data = client.get_historical_prices("QQQ", days=80)
+    # Secondary index history
+    print(f"  Fetching {secondary_label} history...", end=" ", flush=True)
+    qqq_history_data = client.get_historical_prices(secondary_symbol, days=80)
     qqq_history = qqq_history_data.get("historical", []) if qqq_history_data else []
     if qqq_history:
         print(f"OK ({len(qqq_history)} days)")
     else:
-        print("WARN - NASDAQ data unavailable, using S&P 500 only")
+        print(f"WARN - {secondary_label} data unavailable, using {primary_label} only")
 
-    # S&P 500 quote (for current price)
-    print("  Fetching S&P 500 quote...", end=" ", flush=True)
-    sp500_quote_list = client.get_quote("^GSPC")
+    # Primary index quote
+    print(f"  Fetching {primary_label} quote...", end=" ", flush=True)
+    sp500_quote_list = client.get_quote(primary_symbol)
     sp500_quote = sp500_quote_list[0] if sp500_quote_list else None
     if sp500_quote:
         print(f"OK (${sp500_quote.get('price', 0):.2f})")
     else:
         print("WARN - Using historical close as current price")
 
-    # QQQ quote
-    print("  Fetching QQQ quote...", end=" ", flush=True)
-    qqq_quote_list = client.get_quote("QQQ")
+    # Secondary index quote
+    print(f"  Fetching {secondary_label} quote...", end=" ", flush=True)
+    qqq_quote_list = client.get_quote(secondary_symbol)
     qqq_quote = qqq_quote_list[0] if qqq_quote_list else None
     if qqq_quote:
         print(f"OK (${qqq_quote.get('price', 0):.2f})")
