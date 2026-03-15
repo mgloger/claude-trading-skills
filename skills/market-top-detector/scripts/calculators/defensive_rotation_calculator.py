@@ -39,18 +39,26 @@ def _calc_return(symbol_hist: list[dict], days: int) -> Optional[float]:
     return (recent - past) / past * 100
 
 
-def _compute_period_rotation(historical: dict[str, list[dict]], lookback: int) -> Optional[dict]:
+def _compute_period_rotation(
+    historical: dict[str, list[dict]],
+    lookback: int,
+    defensive_etfs: Optional[list] = None,
+    offensive_etfs: Optional[list] = None,
+) -> Optional[dict]:
     """Compute defensive vs offensive rotation for a single period."""
+    _def_list = defensive_etfs if defensive_etfs is not None else DEFENSIVE_ETFS
+    _off_list = offensive_etfs if offensive_etfs is not None else OFFENSIVE_ETFS
+
     def_returns = []
     off_returns = []
 
-    for symbol in DEFENSIVE_ETFS:
+    for symbol in _def_list:
         hist = historical.get(symbol, [])
         ret = _calc_return(hist, lookback)
         if ret is not None:
             def_returns.append(ret)
 
-    for symbol in OFFENSIVE_ETFS:
+    for symbol in _off_list:
         hist = historical.get(symbol, [])
         ret = _calc_return(hist, lookback)
         if ret is not None:
@@ -74,32 +82,42 @@ def _compute_period_rotation(historical: dict[str, list[dict]], lookback: int) -
     }
 
 
-def calculate_defensive_rotation(historical: dict[str, list[dict]], lookback: int = 20) -> dict:
+def calculate_defensive_rotation(
+    historical: dict[str, list[dict]],
+    lookback: int = 20,
+    defensive_etfs: Optional[list] = None,
+    offensive_etfs: Optional[list] = None,
+) -> dict:
     """
     Calculate defensive vs offensive sector rotation score using multi-period analysis.
 
     Args:
         historical: Dict of symbol -> list of daily OHLCV (most recent first, 50+ days)
         lookback: Primary lookback period (default 20, used for backward compat)
+        defensive_etfs: Optional custom defensive ETF list (defaults to DEFENSIVE_ETFS)
+        offensive_etfs: Optional custom offensive ETF list (defaults to OFFENSIVE_ETFS)
 
     Returns:
         Dict with score (0-100), relative_performance, multi_period details
     """
+    _def_list = defensive_etfs if defensive_etfs is not None else DEFENSIVE_ETFS
+    _off_list = offensive_etfs if offensive_etfs is not None else OFFENSIVE_ETFS
+
     # Track fetch success
-    all_etfs = DEFENSIVE_ETFS + OFFENSIVE_ETFS
+    all_etfs = _def_list + _off_list
     total_attempted = len(all_etfs)
     fetch_successes = 0
 
     def_details = {}
     off_details = {}
-    for symbol in DEFENSIVE_ETFS:
+    for symbol in _def_list:
         hist = historical.get(symbol, [])
         ret = _calc_return(hist, lookback)
         if ret is not None:
             def_details[symbol] = round(ret, 2)
             fetch_successes += 1
 
-    for symbol in OFFENSIVE_ETFS:
+    for symbol in _off_list:
         hist = historical.get(symbol, [])
         ret = _calc_return(hist, lookback)
         if ret is not None:
@@ -130,7 +148,7 @@ def calculate_defensive_rotation(historical: dict[str, list[dict]], lookback: in
     periods_computed = 0
 
     for period, weight in MULTI_PERIOD_WEIGHTS.items():
-        result = _compute_period_rotation(historical, period)
+        result = _compute_period_rotation(historical, period, _def_list, _off_list)
         if result is not None:
             period_results[period] = result
             weighted_score += result["score"] * weight
