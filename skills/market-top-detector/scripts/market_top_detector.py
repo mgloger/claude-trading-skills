@@ -52,6 +52,7 @@ from calculators.leading_stock_calculator import (
 )
 from calculators.sentiment_calculator import calculate_sentiment
 from fmp_client import FMPClient
+from yfinance_client import YFinanceClient
 from historical_comparator import compare_to_historical
 from report_generator import generate_json_report, generate_markdown_report
 from scenario_engine import generate_scenarios
@@ -272,13 +273,18 @@ def main():
     print("=" * 70)
     print()
 
-    # Initialize FMP client
-    try:
-        client = FMPClient(api_key=args.api_key)
-        print("FMP API client initialized")
-    except ValueError as e:
-        print(f"ERROR: {e}", file=sys.stderr)
-        sys.exit(1)
+    # Initialize data client: prefer FMP when a key is available, else yfinance
+    use_fmp = args.api_key or os.getenv("FMP_API_KEY")
+    if use_fmp:
+        try:
+            client = FMPClient(api_key=args.api_key)
+            print("FMP API client initialized")
+        except ValueError as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        client = YFinanceClient()
+        print("yfinance client initialized (no FMP key — using Yahoo Finance)")
 
     # ========================================================================
     # Step 1: Fetch shared data (indices, ETFs)

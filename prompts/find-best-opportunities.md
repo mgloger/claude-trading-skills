@@ -143,20 +143,37 @@ LAYER 5 OUTPUT per stock:
 
 ### FINAL OUTPUT
 
-Produce a ranked investment shortlist in this format:
+**Part 1 — Ranked Investment Shortlist**
+
+Produce a ranked table in this format:
 
 | Rank | Ticker | Theme/Sector | Multi-Screen Score | Conviction (0-100) | Entry | Stop | Target | R:R | Shares | $ Risk |
 |------|--------|-------------|-------------------|-------------------|-------|------|--------|-----|--------|--------|
 | 1    | ...    | ...         | ...               | ...               | ...   | ...  | ...    | ... | ...    | ...    |
 
-Then write a 3-5 sentence Market Narrative summarising:
-- Current regime and risk mode
-- The dominant theme driving your top picks
-- Key risk events to watch (from economic calendar)
-- One sentence on why you have conviction in the #1 pick
+---
+
+**Part 2 — Full Situation Report (required, no bullet points)**
+
+Write a detailed, plain-English explanation covering the following four sections. Each section must be written in full paragraphs — not bullet points, not headers-only. Assume the reader understands basic investing but has not seen the raw data. Explain the *why* behind every conclusion.
+
+**Section A — What is the market doing right now, and why does it matter?**
+Describe the current market environment in concrete terms. What do the breadth score, distribution day count, and sector trends actually mean for someone with money invested? Is this a healthy bull market, a topping market, a correction, or a bear market? How serious is the current weakness — is this a routine pullback or something more concerning? Reference the specific numbers (breadth score, distribution days, VIX level, % stocks above key moving averages) and explain what each one tells us about the behaviour of institutional investors.
+
+**Section B — What should I actually do with my portfolio right now?**
+Give concrete, specific guidance. Should the reader be fully invested, partially in cash, or mostly defensive? What actions should they take this week — hold, trim, buy, wait? If they currently hold positions, what does the current environment suggest about stop-loss management and position sizing? If they have cash to deploy, what conditions must be met before using it? Explain the reasoning behind each recommendation — not just what to do, but why this is the right response to what the data is showing.
+
+**Section C — Where are the best opportunities if/when the market recovers?**
+Explain which stocks and themes showed up as the strongest candidates from the screening, and why they stand out. For the top 1-3 picks, describe what makes their fundamentals strong (earnings growth rate, revenue trends, profit margins) and what the technical setup looks like. Explain what you are waiting for before entering — what specific signal or price level would trigger a buy. Also explain why certain themes (Gold, defensive sectors, etc.) may be relevant even in the current weak environment, and what the risk is if you act on them too early.
+
+**Section D — What are the key risks and triggers to watch?**
+Identify the 2-3 most important things to monitor in the coming days and weeks. What economic events, earnings reports, or technical signals could change the picture — either for the better (triggering a buy) or for the worse (requiring further defensive action)? Explain what a Follow-Through Day is and exactly what to look for. Explain what would cause you to abandon a setup entirely. Be specific about price levels, dates, and conditions.
+
+---
 
 Flag any positions that should be AVOIDED or SIZED SMALL due to upcoming earnings,
-sector weakness, or market-top risk.
+sector weakness, or market-top risk. Explain in 1-2 sentences why each flagged name
+is dangerous right now — not just that it should be avoided, but what specific risk makes it so.
 ```
 
 ---
@@ -177,6 +194,14 @@ Run a quick investment opportunity scan:
 Cross-reference: list stocks that appear in BOTH vcp-screener and canslim-screener results
 AND belong to a leading theme. Rank by composite VCP score. Show top 5 with entry,
 stop, and target levels. Use /position-sizer for sizing on the top 2 picks.
+
+Then write a plain-English summary covering:
+1. What the market environment means right now (healthy/topping/recovering?) and why, using the actual scores as evidence.
+2. What to do with your portfolio this week — specific actions, not vague guidance. Explain the reasoning.
+3. Why the top 1-2 picks stand out, what you are waiting for before buying, and what risk you are taking if you act early.
+4. What specific signal (e.g. Follow-Through Day, price level, earnings result) would change your stance.
+
+Write in full paragraphs. No bullet points in this section.
 ```
 
 ---
