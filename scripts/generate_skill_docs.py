@@ -260,19 +260,20 @@ def _generate_buttons(skill_name: str, skill_packages_dir: Path | None, lang: st
 
     Args:
         skill_name: The skill slug (e.g., "pead-screener").
-        skill_packages_dir: Path to the skill-packages directory, or None to skip.
+        skill_packages_dir: Path to the skill-packages directory, or None.
+            Download button is shown only when the .skill file exists.
         lang: "en" or "ja".
 
     Returns:
-        Markdown string with buttons, or empty string if skill_packages_dir is None.
+        Markdown string with Source button always present, plus Download
+        button when .skill package exists.
     """
-    if skill_packages_dir is None:
-        return ""
-
     buttons = []
-    pkg_file = skill_packages_dir / f"{skill_name}.skill"
+    has_package = (
+        skill_packages_dir is not None and (skill_packages_dir / f"{skill_name}.skill").exists()
+    )
 
-    if pkg_file.exists():
+    if has_package:
         dl_url = f"{GITHUB_REPO_URL}/raw/main/skill-packages/{skill_name}.skill"
         if lang == "ja":
             buttons.append(
@@ -1033,7 +1034,6 @@ def update_catalog_api_matrix(
             continue
 
         text = catalog_path.read_text(encoding="utf-8")
-        existing_slugs = _extract_catalog_slugs(text)
         lines = text.splitlines()
 
         # Find the API Requirements Matrix section
@@ -1061,6 +1061,10 @@ def update_catalog_api_matrix(
             continue
         if table_end is None:
             table_end = len(lines)
+
+        # Extract slugs only from the matrix table rows (not full file)
+        matrix_text = "\n".join(lines[sep_idx + 1 : table_end])
+        existing_slugs = _extract_catalog_slugs(matrix_text)
 
         # For JA: find the aggregate row index
         aggregate_idx = None
@@ -1264,6 +1268,14 @@ def main(argv: list[str] | None = None) -> int:
         all_skills_for_catalog.append((d.name, data, api_reqs.get(d.name)))
 
     update_catalog_api_matrix(args.docs_dir, all_skills_for_catalog)
+
+    if args.catalog_category:
+        print(
+            f"\nWarning: --catalog-category '{args.catalog_category}' was specified "
+            "but category table insertion is not yet implemented.\n"
+            "Please add the skill to the category table manually in "
+            "docs/en/skill-catalog.md and docs/ja/skill-catalog.md."
+        )
 
     return 0
 

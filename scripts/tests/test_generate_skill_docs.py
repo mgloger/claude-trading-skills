@@ -569,10 +569,17 @@ class TestButtons:
         assert "スキルパッケージをダウンロード (.skill)" in result
         assert "GitHubでソースを見る" in result
 
-    def test_buttons_none(self):
-        """When skill_packages_dir is None, return empty string."""
+    def test_buttons_none_still_shows_source(self):
+        """When skill_packages_dir is None, Source button still appears."""
         result = _generate_buttons("my-skill", None, "en")
-        assert result == ""
+        assert "View Source on GitHub" in result
+        assert "Download Skill Package" not in result
+
+    def test_buttons_none_ja_still_shows_source(self):
+        """When skill_packages_dir is None, JA Source button still appears."""
+        result = _generate_buttons("my-skill", None, "ja")
+        assert "GitHubでソースを見る" in result
+        assert "スキルパッケージをダウンロード" not in result
 
 
 # ---------------------------------------------------------------------------
@@ -824,6 +831,43 @@ class TestUpdateCatalogApiMatrix:
         assert new_idx is not None, "New Skill row not found"
         assert agg_idx is not None, "Aggregate row not found"
         assert new_idx < agg_idx, "New skill should appear before aggregate row"
+
+    def test_skill_in_category_but_not_in_matrix_gets_added(self, tmp_path):
+        """A skill linked in a category table but missing from matrix should be added."""
+        docs_dir = tmp_path / "docs"
+        en_dir = docs_dir / "en"
+        en_dir.mkdir(parents=True)
+        catalog = en_dir / "skill-catalog.md"
+        catalog.write_text(
+            textwrap.dedent("""\
+            # Skill Catalog
+
+            ## 1. Screening
+
+            | Skill | Description | API Requirements |
+            |-------|-------------|-----------------|
+            | **[My Skill](/en/skills/my-skill/)** | Already in category | badge |
+
+            ## API Requirements Matrix
+
+            | Skill | FMP | FINVIZ Elite | Alpaca |
+            |-------|-----|-------------|--------|
+            | Other Skill | -- | -- | -- |
+
+            "--" means not required.
+            """)
+        )
+        all_skills = [
+            (
+                "my-skill",
+                {"frontmatter": {"name": "my-skill", "description": "desc"}},
+                {"fmp": "✅ Required", "finviz": "❌ Not used", "alpaca": "❌ Not used"},
+            ),
+        ]
+        update_catalog_api_matrix(docs_dir, all_skills)
+        content = catalog.read_text()
+        # my-skill is in category table but NOT in matrix — should be added to matrix
+        assert content.count("My Skill") == 2  # once in category, once in matrix
 
     def test_ja_skips_all_dash_skill(self, tmp_path):
         docs_dir = tmp_path / "docs"
