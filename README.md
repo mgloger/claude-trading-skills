@@ -212,6 +212,12 @@ Curated Claude skills for equity investors and traders. Each skill bundles promp
   - Exports JSON + markdown reports with provenance (`contributing_skills`), contradiction logs, and deduplication logs.
   - No API key required — operates on local JSON/YAML outputs from upstream edge skills.
 
+- **Trader Memory Core** (`trader-memory-core`)
+  - Persistent state layer that tracks investment theses from screening idea to closed position with postmortem.
+  - Bundles screener → analysis → position sizing → portfolio management outputs into a single thesis object.
+  - Supports lifecycle management (IDEA → ENTRY_READY → ACTIVE → CLOSED), position attachment, review scheduling, and MAE/MFE analysis.
+  - Integrates with kanchi-dividend-sop, earnings-trade-analyzer, vcp-screener, pead-screener, canslim-screener, and edge-candidate-agent.
+
 ### Market Timing & Bottom Detection
 
 - **Market Top Detector** (`market-top-detector`)
@@ -562,6 +568,7 @@ Several skills require API keys for data access:
 | **Edge Strategy Reviewer** | ❌ Not used | ❌ Not used | ❌ Not used | Deterministic scoring on local YAML drafts |
 | **Edge Pipeline Orchestrator** | ❌ Not used | ❌ Not used | ❌ Not used | Orchestrates local edge skills via subprocess |
 | **Edge Signal Aggregator** | ❌ Not used | ❌ Not used | ❌ Not used | Aggregates local edge-skill JSON/YAML outputs into weighted ranked signals |
+| **Trader Memory Core** | 🟡 Optional | ❌ Not used | ❌ Not used | FMP only for MAE/MFE in postmortem; core features work offline |
 | Dual-Axis Skill Reviewer | ❌ Not used | ❌ Not used | ❌ Not used | Deterministic scoring + optional LLM review |
 
 ### API Setup

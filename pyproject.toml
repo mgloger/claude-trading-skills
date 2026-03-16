@@ -12,6 +12,7 @@ version = "0.1.0"
 description = "Claude Skills for equity investors and traders"
 requires-python = ">=3.9"
 dependencies = [
+    "jsonschema>=4.25.1",
     "pyyaml>=6.0",
     "scipy>=1.13.1",
 ]
@@ -77,6 +78,7 @@ testpaths = [
     "skills/options-strategy-advisor/scripts/tests",
     # canslim-screener excluded: requires bs4 (optional dep)
     "skills/skill-integration-tester/scripts/tests",
+    "skills/trader-memory-core/scripts/tests",
     "scripts/tests",
 ]
 
@@ -94,7 +96,7 @@ skips = [
 
 [tool.codespell]
 skip = ".venv,*.json,*.csv,*.baseline,skill-packages,*.pyc,__pycache__"
-ignore-words-list = "trough,ore,cna,acn,blok,hims,pont,claus"
+ignore-words-list = "trough,ore,cna,acn,blok,hims,pont,claus,theses"
 
 [tool.coverage.run]
 source = ["skills"]
