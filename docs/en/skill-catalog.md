@@ -90,6 +90,7 @@ A comprehensive catalog of all 43 Claude Trading Skills organized by category. B
 | Skill | Description | API Requirements |
 |-------|-------------|-----------------|
 | **Portfolio Manager** | Portfolio analysis with Alpaca MCP Server integration. Asset allocation, sector diversification, risk metrics, HOLD/ADD/TRIM/SELL recommendations, rebalancing plans | <span class="badge badge-api">Alpaca Required</span> |
+| **[Trader Memory Core]({{ '/en/skills/trader-memory-core/' | relative_url }})** | Persistent thesis lifecycle tracker: register screener outputs as IDEA, manage state transitions through ENTRY_READY → ACTIVE → CLOSED, attach position sizing, schedule reviews, and generate postmortem reports with MAE/MFE | <span class="badge badge-optional">FMP Optional</span> |
 | **[Position Sizer]({{ '/en/skills/position-sizer/' | relative_url }})** | Risk-based position sizing using Fixed Fractional, ATR-based, and Kelly Criterion methods. Portfolio constraints (max position %, max sector %). Works offline | <span class="badge badge-free">No API</span> |
 | **[US Stock Analysis]({{ '/en/skills/us-stock-analysis/' | relative_url }})** | Comprehensive US equity research: fundamentals, technicals, peer comparisons, and structured investment memos with bull/bear cases | <span class="badge badge-free">No API</span> |
 | **Earnings Calendar** | Fetches upcoming earnings announcements via FMP API. Focuses on mid-cap+ companies (>$2B market cap), organized by date and timing (BMO/AMC) | <span class="badge badge-api">FMP Required</span> |
@@ -160,6 +161,7 @@ A comprehensive catalog of all 43 Claude Trading Skills organized by category. B
 
 - **Portfolio Manager** -- Real-time holdings analysis and rebalancing with Alpaca integration
 - **[Position Sizer]({{ '/en/skills/position-sizer/' | relative_url }})** -- Risk-based position sizing with portfolio constraints
+- **[Trader Memory Core]({{ '/en/skills/trader-memory-core/' | relative_url }})** -- Track theses from idea to postmortem with persistent state
 
 ### I want to find trending themes
 
@@ -210,6 +212,7 @@ A comprehensive catalog of all 43 Claude Trading Skills organized by category. B
 | Stanley Druckenmiller Investment | -- | -- | -- |
 | Strategy Pivot Designer | -- | -- | -- |
 | Portfolio Manager | -- | -- | Required |
+| Trader Memory Core | Optional | -- | -- |
 | Position Sizer | -- | -- | -- |
 | US Stock Analysis | -- | -- | -- |
 | Earnings Calendar | Required | -- | -- |

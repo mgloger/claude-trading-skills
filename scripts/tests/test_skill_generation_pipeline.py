@@ -108,6 +108,26 @@ def test_is_safe_dirty_tree_mixed(pipeline_module):
     assert pipeline_module._is_safe_dirty_tree(output) is False
 
 
+def test_is_safe_dirty_tree_allows_untracked_state(pipeline_module):
+    """Untracked files under state/ are allowed (new thesis files)."""
+    assert pipeline_module._is_safe_dirty_tree("?? state/theses/new.yaml\n") is True
+
+
+def test_is_safe_dirty_tree_allows_untracked_state_journal(pipeline_module):
+    """Untracked files under state/journal/ are allowed."""
+    assert pipeline_module._is_safe_dirty_tree("?? state/journal/pm_new.md\n") is True
+
+
+def test_is_safe_dirty_tree_blocks_untracked_skills(pipeline_module):
+    """Untracked files under skills/ are still blocked."""
+    assert pipeline_module._is_safe_dirty_tree("?? skills/new/SKILL.md\n") is False
+
+
+def test_is_safe_dirty_tree_allows_tracked_state(pipeline_module):
+    """Tracked changes under state/ are allowed."""
+    assert pipeline_module._is_safe_dirty_tree(" M state/theses/_index.json\n") is True
+
+
 # -- Backlog tests --
 
 

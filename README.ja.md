@@ -190,6 +190,12 @@ English README is available at [`README.md`](README.md).
   - provenance（`contributing_skills`）、矛盾ログ、重複統合ログを含む JSON + Markdown レポートを出力。
   - APIキー不要 — 上流エッジスキルのローカル JSON/YAML 出力を入力として動作。
 
+- **Trader Memory Core** (`trader-memory-core`)
+  - スクリーニングからポジション決済・振り返りまで、投資仮説のライフサイクルを永続的に追跡するステート層。
+  - スクリーナー → 分析 → ポジションサイジング → ポートフォリオ管理の各出力を1つの thesis オブジェクトに統合。
+  - ライフサイクル管理（IDEA → ENTRY_READY → ACTIVE → CLOSED）、ポジション付与、レビュースケジュール、MAE/MFE分析をサポート。
+  - kanchi-dividend-sop、earnings-trade-analyzer、vcp-screener、pead-screener、canslim-screener、edge-candidate-agent と統合。
+
 ### マーケットタイミング・底打ち検出
 
 - **マーケットトップ検出器** (`market-top-detector`)
@@ -483,6 +489,7 @@ launchctl start com.trade-analysis.skill-generation-daily
 - **エッジ戦略レビュアー** (`edge-strategy-reviewer`): APIキー不要（ローカルYAMLドラフトの決定論的スコアリング）
 - **エッジパイプラインオーケストレータ** (`edge-pipeline-orchestrator`): APIキー不要（ローカルエッジスキルをsubprocess経由でオーケストレーション）
 - **エッジシグナルアグリゲータ** (`edge-signal-aggregator`): APIキー不要（ローカルJSON/YAML出力を統合し重み付けランキングを生成）
+- **Trader Memory Core** (`trader-memory-core`): 🟡 オプション — FMPはポストモーテムのMAE/MFEのみ使用。コア機能はオフラインで動作
 
 ## 参考リンク
 - Claude Skillsローンチ概要: https://www.anthropic.com/news/skills

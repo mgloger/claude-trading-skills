@@ -77,6 +77,37 @@ The skill-creator will:
 3. If the skill requires API keys, add it to the API Requirements table in `README.md` and the API要件 section in `README.ja.md`
 4. If a new category is needed, create it in both files
 
+### Creating Documentation Site Pages
+
+After creating a new skill, generate documentation pages for the Jekyll site at `docs/`.
+
+**Auto-generation (recommended for most skills):**
+
+```bash
+# Generate 6-section EN page + JA stub for a specific skill
+python3 scripts/generate_skill_docs.py --skill <skill-name>
+
+# Regenerate all auto-generated pages
+python3 scripts/generate_skill_docs.py --overwrite
+```
+
+**Hand-written ★ guides (for key skills):**
+
+For skills that need detailed documentation with examples, troubleshooting, and CLI reference, create a 10-section guide manually. See `docs/README.md` for the full template and conventions.
+
+Required sections for ★ guides:
+1. Overview  2. Prerequisites  3. Quick Start  4. How It Works
+5. Usage Examples  6. Understanding the Output  7. Tips & Best Practices
+8. Combining with Other Skills  9. Troubleshooting  10. Reference
+
+**MANDATORY for both methods:**
+1. Create pages in both `docs/en/skills/` and `docs/ja/skills/` (auto-gen handles this)
+2. Verify `lang_peer` links point correctly in both directions
+3. Add the skill to `docs/en/skills/index.md` and `docs/ja/skills/index.md` guide tables
+4. Add the skill to the appropriate category in `docs/en/skill-catalog.md` and `docs/ja/skill-catalog.md`
+5. Add the skill to the API Requirements Matrix in both catalog files
+6. See `docs/README.md` for frontmatter format, badge syntax, and complete checklist
+
 ### Packaging Skills for Distribution
 
 Skills are packaged as ZIP files for Claude web app users:
@@ -143,6 +174,7 @@ If no test exists for the changed behavior, add one whenever practical.
 | **Data Quality Checker** | ❌ Not required | ❌ Not used | ❌ Not used | Local markdown validation; works offline |
 | **Edge Strategy Reviewer** | ❌ Not required | ❌ Not used | ❌ Not used | Deterministic scoring on local YAML drafts |
 | **Edge Pipeline Orchestrator** | ❌ Not required | ❌ Not used | ❌ Not used | Orchestrates local edge skills via subprocess |
+| **Trader Memory Core** | 🟡 Optional | ❌ Not used | ❌ Not used | FMP only for MAE/MFE in postmortem |
 | Dual-Axis Skill Reviewer | ❌ Not required | ❌ Not used | ❌ Not used | Deterministic scoring + optional LLM review |
 
 #### API Key Setup
@@ -422,6 +454,31 @@ python3 skills/edge-pipeline-orchestrator/scripts/orchestrate_edge_pipeline.py \
   --output-dir reports/edge_pipeline/ --dry-run
 ```
 
+**Trader Memory Core:** 🟡 FMP API optional (for MAE/MFE only)
+```bash
+# Register screener output as thesis
+python3 skills/trader-memory-core/scripts/thesis_ingest.py \
+  --source kanchi-dividend-sop \
+  --input reports/kanchi_entry_signals_2026-03-14.json \
+  --state-dir state/theses/
+
+# Query theses
+python3 skills/trader-memory-core/scripts/thesis_store.py \
+  --state-dir state/theses/ list --ticker AAPL --status ACTIVE
+
+# Check review schedule
+python3 skills/trader-memory-core/scripts/thesis_review.py \
+  --state-dir state/theses/ review-due --as-of 2026-04-15
+
+# Generate postmortem
+python3 skills/trader-memory-core/scripts/thesis_review.py \
+  --state-dir state/theses/ postmortem th_aapl_div_20260314_a3f1
+
+# Summary statistics
+python3 skills/trader-memory-core/scripts/thesis_review.py \
+  --state-dir state/theses/ summary
+```
+
 ### Skill Self-Improvement Loop
 
 An automated pipeline reviews and improves skill quality on a daily cadence.
@@ -658,6 +715,16 @@ Skills are designed to be combined for comprehensive analysis:
 6. [REVISE] → revision → re-review (max 2 cycles)
 7. [PASS + export eligible] → edge-candidate-agent export → strategy.yaml + metadata.json
 - **Orchestrated mode:** edge-pipeline-orchestrator runs all stages automatically with feedback loop
+
+**Thesis-Driven Trading Pipeline:**
+1. Screener skills (kanchi, earnings-trade-analyzer, vcp, pead, canslim) → Generate candidates
+2. Trader Memory Core (register) → `thesis_ingest.py --source <skill> --input <report>` creates IDEA thesis
+3. US Stock Analysis / Technical Analyst → Deep-dive validation, link report via `link_report()`
+4. Trader Memory Core (transition) → IDEA → ENTRY_READY → ACTIVE with `transition()`
+5. Position Sizer → Calculate risk-based sizing, attach via `attach_position()`
+6. Portfolio Manager → Execute entry, update thesis with actual price/date
+7. Trader Memory Core (review) → `list_review_due()` for periodic checks
+8. Trader Memory Core (close + postmortem) → Record exit, generate journal entry with MAE/MFE
 
 ## Important Conventions
 

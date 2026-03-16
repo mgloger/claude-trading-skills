@@ -302,7 +302,7 @@ def rotate_logs(project_root: Path) -> None:
 # -- Git safety --
 
 
-_SAFE_DIRTY_PREFIXES = ("reports/", "logs/")
+_SAFE_DIRTY_PREFIXES = ("reports/", "logs/", "state/")
 
 
 def _is_safe_dirty_tree(porcelain_output: str) -> bool:
@@ -317,9 +317,11 @@ def _is_safe_dirty_tree(porcelain_output: str) -> bool:
         status_code = line[:2]
         filepath = line[3:].strip().split(" -> ")[-1]  # handle renames
         if status_code == "??":
-            logger.warning("Blocked: untracked file: %s", filepath)
-            return False
-        if not filepath.startswith(_SAFE_DIRTY_PREFIXES):
+            # Allow untracked files under state/ (new thesis/journal files)
+            if not filepath.startswith("state/"):
+                logger.warning("Blocked: untracked file: %s", filepath)
+                return False
+        elif not filepath.startswith(_SAFE_DIRTY_PREFIXES):
             logger.warning("Blocked: non-safe dirty file: %s", filepath)
             return False
     return True

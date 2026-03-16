@@ -175,6 +175,26 @@ def test_is_safe_dirty_tree_mixed(loop_module):
     assert loop_module._is_safe_dirty_tree(output) is False
 
 
+def test_is_safe_dirty_tree_allows_untracked_state(loop_module):
+    """Untracked files under state/ are allowed (new thesis files)."""
+    assert loop_module._is_safe_dirty_tree("?? state/theses/new.yaml\n") is True
+
+
+def test_is_safe_dirty_tree_allows_untracked_state_journal(loop_module):
+    """Untracked files under state/journal/ are allowed."""
+    assert loop_module._is_safe_dirty_tree("?? state/journal/pm_new.md\n") is True
+
+
+def test_is_safe_dirty_tree_blocks_untracked_skills(loop_module):
+    """Untracked files under skills/ are still blocked."""
+    assert loop_module._is_safe_dirty_tree("?? skills/new/SKILL.md\n") is False
+
+
+def test_is_safe_dirty_tree_allows_tracked_state(loop_module):
+    """Tracked changes under state/ are allowed."""
+    assert loop_module._is_safe_dirty_tree(" M state/theses/_index.json\n") is True
+
+
 def test_git_safe_check_safe_dirty_passes(loop_module, tmp_path: Path, monkeypatch):
     """Dirty tree with only reports/ changes should pass."""
     call_count = [0]
